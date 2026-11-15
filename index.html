@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enroll a Group in an LMS · Software Simulation</title>
+<meta name="description" content="A Watch, Try, and Test software simulation: enroll a learner group in a course and set a due date in a fictional LMS.">
+<style>
+  :root{
+    --purple:#3E1F6E; --purple-2:#5B3A93; --tint:#F7F3FC; --line:#E7DCF5;
+    --gold:#F2B705; --gold-ink:#7A5A00; --bg:#FFF7EF; --ink:#1F2328; --muted:#59636E;
+    --good:#1E7B4B; --good-bg:#E6F4EC; --bad:#B42318; --bad-bg:#FDECEA; --warn-bg:#FFF4D6;
+    /* fictional LMS palette */
+    --app-bg:#F4F7FA; --app-side:#12324A; --app-side-2:#1B4566; --app-accent:#0F6E8C; --app-line:#D7E0E8; --app-ink:#1C2B36; --app-muted:#5A6B78;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:17px}
+  .skip{position:absolute;left:-999px;top:8px;background:var(--gold);color:var(--purple);padding:10px 16px;border-radius:8px;font-weight:700;z-index:50}
+  .skip:focus{left:12px}
+  header.top{background:var(--purple);color:#fff;padding:20px 24px 24px}
+  .wrap{max-width:1040px;margin:0 auto}
+  .tag{display:inline-block;background:var(--gold);color:var(--purple);font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 14px;border-radius:999px}
+  header.top h1{font-size:clamp(24px,3.6vw,34px);line-height:1.15;margin:10px 0 4px}
+  header.top p{margin:0;color:#E9E1F7}
+  main{max-width:1040px;margin:20px auto 32px;padding:0 20px}
+  button{font:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--gold);outline-offset:2px;box-shadow:0 0 0 5px var(--purple)}
+  .card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:24px}
+  h2{color:var(--purple);margin:0 0 10px;font-size:clamp(22px,3vw,28px)}
+  h2:focus{outline:none}
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+  .mode{background:#fff;border:2px solid var(--line);border-radius:14px;padding:18px;text-align:left;display:flex;flex-direction:column;gap:6px;color:var(--ink)}
+  .mode:hover{border-color:var(--purple-2);background:var(--tint)}
+  .mode .num{font-weight:800;color:var(--gold-ink);font-size:13px;letter-spacing:.06em}
+  .mode strong{font-size:20px;color:var(--purple)}
+  .objectives{margin:6px 0 0;padding-left:20px}
+  .primary{background:var(--purple);color:#fff;border:0;border-radius:10px;padding:11px 20px;font-weight:700}
+  .primary:hover{background:var(--purple-2)}
+  .secondary{background:#fff;color:var(--purple);border:2px solid var(--purple);border-radius:10px;padding:9px 18px;font-weight:700}
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin-bottom:12px}
+  .modebadge{background:var(--purple);color:#fff;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 12px;border-radius:999px}
+  .progress{color:var(--muted);font-weight:600;font-size:15px}
+  .caption{background:#fff;border:2px solid var(--line);border-left:6px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:12px;min-height:58px}
+  .caption.hint{background:var(--warn-bg);border-color:#F0D58A;border-left-color:var(--gold)}
+  .caption.ok{background:var(--good-bg);border-color:#9FD3B5;border-left-color:var(--good)}
+  .caption p{margin:0}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  /* ---------- fictional LMS frame ---------- */
+  .device{border:2px solid #B9C6D2;border-radius:14px;overflow:hidden;background:var(--app-bg);box-shadow:0 10px 30px rgba(18,50,74,.12);position:relative}
+  .chrome{background:#E3E9EF;border-bottom:1px solid #C9D4DE;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--app-muted)}
+  .dot{width:11px;height:11px;border-radius:50%;background:#C3CDD6;display:inline-block}
+  .url{flex:1;background:#fff;border-radius:6px;padding:3px 10px;margin-left:8px}
+  .app{display:grid;grid-template-columns:200px 1fr;min-height:470px;color:var(--app-ink);font-size:15px;position:relative}
+  .side{background:var(--app-side);color:#DCE7EF;padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+  .brand{color:#fff;font-weight:800;font-size:17px;padding:4px 10px 14px;letter-spacing:.01em}
+  .brand span{color:#7FD3E6}
+  .nav{background:none;border:0;color:#DCE7EF;text-align:left;padding:9px 12px;border-radius:8px;font-size:15px}
+  .nav:hover{background:var(--app-side-2)}
+  .nav[aria-current="page"]{background:var(--app-accent);color:#fff;font-weight:700}
+  .content{padding:18px 22px;overflow:auto}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+  .search{border:1px solid var(--app-line);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;width:220px;background:#fff}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--app-accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .app h3{margin:0 0 4px;font-size:21px}
+  .crumb{color:var(--app-muted);font-size:13px;margin-bottom:6px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+  .stat{background:#fff;border:1px solid var(--app-line);border-radius:10px;padding:12px}
+  .stat b{display:block;font-size:24px}
+  .panel{background:#fff;border:1px solid var(--app-line);border-radius:10px;padding:12px 14px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--app-line)}
+  th{color:var(--app-muted);font-weight:600;font-size:13px}
+  .linkbtn{background:none;border:0;color:var(--app-accent);font-weight:700;padding:2px 0;text-align:left;font-size:14px}
+  .linkbtn:hover{text-decoration:underline}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#E4F2F6;color:#0B5870}
+  .tabs{display:flex;gap:4px;border-bottom:2px solid var(--app-line);margin:12px 0}
+  .tab{background:none;border:0;padding:9px 14px;font-weight:600;color:var(--app-muted);border-bottom:3px solid transparent;margin-bottom:-2px;font-size:15px}
+  .tab[aria-selected="true"]{color:var(--app-accent);border-bottom-color:var(--app-accent)}
+  .appbtn{background:var(--app-accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px}
+  .appbtn.ghost{background:#fff;color:var(--app-accent);border:1px solid var(--app-accent)}
+  .row-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+  .overlay{position:absolute;inset:0;background:rgba(18,50,74,.45);display:grid;place-items:center;padding:16px}
+  .dialog{background:#fff;border-radius:12px;width:min(440px,100%);padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .dialog h4{margin:0 0 12px;font-size:19px}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;font-size:14px}
+  .field label{font-weight:700}
+  .field select,.field input[type=text]{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #9FB1BF;border-radius:8px;background:#fff}
+  .check{display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:14px}
+  .dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+  .toast{position:absolute;right:16px;bottom:16px;background:#14532D;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+  .newrow td{background:#EAF7EE}
+  /* guidance */
+  .target-ring{outline:3px solid var(--gold)!important;outline-offset:3px;box-shadow:0 0 0 7px rgba(242,183,5,.35)!important;border-radius:8px}
+  .cursor{position:absolute;width:22px;height:22px;pointer-events:none;z-index:20;transition:left .7s ease,top .7s ease;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+  .click-pulse{position:absolute;width:34px;height:34px;border-radius:50%;border:3px solid var(--gold);pointer-events:none;z-index:19;animation:pulse .5s ease-out forwards}
+  @keyframes pulse{from{transform:scale(.4);opacity:1}to{transform:scale(1.3);opacity:0}}
+  .shake{animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .results td,.results th{font-size:15px}
+  .ok-t{color:var(--good);font-weight:700}.bad-t{color:var(--bad);font-weight:700}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  footer{max-width:1040px;margin:0 auto 28px;padding:0 20px;color:var(--muted);font-size:14px}
+  @media (max-width:760px){.modes{grid-template-columns:1fr}.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap}.brand{width:100%;padding-bottom:6px}.stats{grid-template-columns:1fr}.search{width:140px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#stage">Skip to the simulation</a>
+<header class="top"><div class="wrap">
+  <span class="tag">SOFTWARE SIMULATION · LMS ADMINISTRATION</span>
+  <h1>Enroll a Group and Set a Due Date</h1>
+  <p>Learn a common LMS admin task in three modes: watch it, try it with hints, then test yourself.</p>
+</div></header>
+
+<main>
+  <section id="stage" aria-label="Simulation"></section>
+  <div id="announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+</main>
+<footer>Cedarline LMS is a fictional application made for this simulation. Built by LaShaudra Cox in HTML, CSS, and JavaScript to meet WCAG 2.1 AA: every step works by mouse or keyboard, and instructions are announced to screen readers.</footer>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const announceEl = document.getElementById('announce');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const say = m => { announceEl.textContent = ''; setTimeout(() => announceEl.textContent = m, 50); };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // ---------- The task ----------
+  const STEPS = [
+    { id:'nav-courses',  kind:'click',  text:'Open <b>Courses</b> in the left menu.', hint:'Look in the dark menu on the left for <b>Courses</b>.' },
+    { id:'course-safety',kind:'click',  text:'Open the course <b>Workplace Safety Essentials</b>.', hint:'Find <b>Workplace Safety Essentials</b> in the course list and select its name.' },
+    { id:'tab-enroll',   kind:'click',  text:'Go to the <b>Enrollments</b> tab.', hint:'The tabs are under the course title. Choose <b>Enrollments</b>.' },
+    { id:'btn-enroll',   kind:'click',  text:'Select <b>+ Enroll learners</b>.', hint:'The <b>+ Enroll learners</b> button is above the table, on the right.' },
+    { id:'sel-group',    kind:'select', value:'nh-nov', text:'Choose the group <b>New Hires – November</b>.', hint:'Open the <b>Enroll by group</b> list and pick <b>New Hires – November</b>.' },
+    { id:'inp-due',      kind:'text',   value:'12/15/2026', text:'Type the due date <b>12/15/2026</b>.', hint:'Type <b>12/15/2026</b> in the <b>Due date</b> box, then press Enter or Tab.' },
+    { id:'btn-confirm',  kind:'click',  text:'Select <b>Enroll</b> to finish.', hint:'Choose the <b>Enroll</b> button at the bottom of the dialog.' }
+  ];
+
+  // ---------- The fictional app, drawn from how many steps are done ----------
+  function appHTML(k, opts = {}){
+    const screen = k === 0 ? 'dash' : k === 1 ? 'courses' : k === 2 ? 'overview' : 'enroll';
+    const modal = k >= 4 && k <= 6;
+    const done = k >= 7;
+    const groupVal = opts.group ?? (k >= 5 ? 'nh-nov' : '');
+    const dueVal = opts.due ?? (k >= 6 ? '12/15/2026' : '');
+    const nav = (id, label, cur) => `<button class="nav" data-id="${id}" ${cur ? 'aria-current="page"' : ''}>${label}</button>`;
+    const navCur = screen === 'dash' ? 'dash' : 'courses';
+    let main = '';
+    if (screen === 'dash'){
+      main = `<h3>Welcome back, Jordan</h3><p class="crumb">Admin dashboard</p>
+        <div class="stats"><div class="stat"><b>24</b>Active courses</div><div class="stat"><b>412</b>Learners</div><div class="stat"><b>9</b>Overdue enrollments</div></div>
+        <div class="panel"><b>Recent activity</b><table><tbody>
+          <tr><td>Data Privacy 101 updated</td><td>2 hours ago</td></tr>
+          <tr><td>36 managers completed Leading Inclusive Meetings</td><td>Yesterday</td></tr>
+          <tr><td>New group created: New Hires – November</td><td>Yesterday</td></tr></tbody></table></div>`;
+    } else if (screen === 'courses'){
+      const row = (id, name, n, st) => `<tr><td><button class="linkbtn" data-id="${id}">${name}</button></td><td>${n}</td><td><span class="pill">${st}</span></td></tr>`;
+      main = `<div class="row-actions"><div><h3>Courses</h3><p class="crumb" style="margin:0">24 active courses</p></div><button class="appbtn ghost" data-id="btn-newcourse">+ New course</button></div>
+        <div class="panel"><table><thead><tr><th scope="col">Course</th><th scope="col">Learners</th><th scope="col">Status</th></tr></thead><tbody>
+          ${row('course-cs','Customer Service Basics','128','Published')}
+          ${row('course-privacy','Data Privacy 101','412','Published')}
+          ${row('course-safety','Workplace Safety Essentials','3','Published')}
+          ${row('course-meet','Leading Inclusive Meetings','36','Published')}
+        </tbody></table></div>`;
+    } else {
+      const tab = (id, label, sel) => `<button class="tab" role="tab" data-id="${id}" aria-selected="${sel}">${label}</button>`;
+      const onEnroll = screen === 'enroll';
+      let body;
+      if (!onEnroll){
+        body = `<div class="panel"><p style="margin:0 0 6px"><b>About this course</b></p><p style="margin:0">A 25-minute course on hazard reporting, emergency exits, and safe lifting. Required for all new employees within 30 days of hire.</p></div>`;
+      } else {
+        body = `<div class="row-actions"><span class="crumb" style="margin:0">${done ? '21' : '3'} learners enrolled</span><div style="display:flex;gap:8px"><button class="appbtn ghost" data-id="btn-export">Export CSV</button><button class="appbtn" data-id="btn-enroll">+ Enroll learners</button></div></div>
+          <div class="panel"><table><thead><tr><th scope="col">Learner or group</th><th scope="col">Learners</th><th scope="col">Due date</th></tr></thead><tbody>
+            ${done ? '<tr class="newrow"><td><b>New Hires – November</b> (group)</td><td>18</td><td>Dec 15, 2026</td></tr>' : ''}
+            <tr><td>Avery Chen</td><td>1</td><td>Nov 30, 2026</td></tr>
+            <tr><td>Marcus Hill</td><td>1</td><td>Nov 30, 2026</td></tr>
+            <tr><td>Priya Nair</td><td>1</td><td>Dec 4, 2026</td></tr>
+          </tbody></table></div>`;
+      }
+      main = `<p class="crumb">Courses › Workplace Safety Essentials</p><h3>Workplace Safety Essentials</h3>
+        <div class="tabs" role="tablist">${tab('tab-overview','Overview',!onEnroll)}${tab('tab-content','Content',false)}${tab('tab-enroll','Enrollments',onEnroll)}${tab('tab-grades','Grades',false)}</div>${body}`;
+    }
+    const opt = (v, l) => `<option value="${v}" ${groupVal === v ? 'selected' : ''}>${l}</option>`;
+    const dialog = modal ? `<div class="overlay"><div class="dialog" role="dialog" aria-modal="false" aria-labelledby="dlg-title">
+        <h4 id="dlg-title">Enroll learners</h4>
+        <div class="field"><label for="sel-group">Enroll by group</label>
+          <select id="sel-group" data-id="sel-group">${opt('','Choose a group…')}${opt('all','All Staff (412)')}${opt('nh-nov','New Hires – November (18)')}${opt('mgr','Managers (36)')}${opt('con','Contractors (22)')}</select></div>
+        <div class="field"><label for="inp-due">Due date</label>
+          <input type="text" id="inp-due" data-id="inp-due" placeholder="MM/DD/YYYY" inputmode="numeric" autocomplete="off" value="${esc(dueVal)}"></div>
+        <label class="check"><input type="checkbox" checked data-neutral> Email learners about this enrollment</label>
+        <div class="dialog-actions"><button class="appbtn ghost" data-id="btn-cancel">Cancel</button><button class="appbtn" data-id="btn-confirm">Enroll</button></div>
+      </div></div>` : '';
+    const toast = done ? `<div class="toast" role="status">18 learners enrolled in Workplace Safety Essentials</div>` : '';
+    return `<div class="chrome" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">cedarline-lms.example/admin</span></div>
+      <div class="app" id="app">
+        <nav class="side" aria-label="Cedarline LMS menu"><div class="brand">Cedar<span>line</span> LMS</div>
+          ${nav('nav-dash','Dashboard',navCur==='dash')}${nav('nav-courses','Courses',navCur==='courses')}${nav('nav-users','Users',false)}${nav('nav-reports','Reports',false)}${nav('nav-settings','Settings',false)}</nav>
+        <div class="content" id="app-main" tabindex="-1">
+          <div class="topline"><input class="search" data-id="search" aria-label="Search Cedarline" placeholder="Search…"><div class="avatar" aria-hidden="true">JR</div></div>
+          ${main}
+        </div>
+        ${dialog}${toast}
+      </div>`;
+  }
+
+  // ---------- Mode chooser ----------
+  function home(){
+    stage.innerHTML = `<div class="card">
+      <h2 tabindex="-1">Choose how you want to learn</h2>
+      <p style="margin:0">In this task you'll enroll the <b>New Hires – November</b> group in <b>Workplace Safety Essentials</b> and set a due date of <b>December 15, 2026</b>. It takes 7 steps.</p>
+      <p style="margin:12px 0 0"><b>By the end, you'll be able to:</b></p>
+      <ul class="objectives"><li>Find a course and open its enrollment settings</li><li>Enroll a whole learner group at once</li><li>Set a completion due date for the enrollment</li></ul>
+      <div class="modes">
+        <button class="mode" data-mode="watch"><span class="num">MODE 1</span><strong>Watch</strong><span>See each step demonstrated, at your own pace.</span></button>
+        <button class="mode" data-mode="try"><span class="num">MODE 2</span><strong>Try</strong><span>Do it yourself, with hints if you get stuck.</span></button>
+        <button class="mode" data-mode="test"><span class="num">MODE 3</span><strong>Test</strong><span>Do it alone. Your score shows steps right on the first try.</span></button>
+      </div></div>`;
+    stage.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => start(b.dataset.mode)));
+  }
+
+  // ---------- Shared shell ----------
+  let session = null;
+  function shell(mode){
+    const label = { watch:'WATCH', try:'TRY', test:'TEST' }[mode];
+    stage.innerHTML = `<h2 class="sr-only">${label[0] + label.slice(1).toLowerCase()} mode</h2><div class="bar"><div style="display:flex;gap:10px;align-items:center"><span class="modebadge">${label} MODE</span><span class="progress" id="progress"></span></div>
+        <button class="secondary" id="exit">Back to modes</button></div>
+      <div class="caption" id="caption"><p id="caption-text"></p></div>
+      <div class="device" id="device"></div>
+      <div class="controls" id="controls"></div>`;
+    document.getElementById('exit').addEventListener('click', () => { stopWatch(); home(); stage.querySelector('h2').focus(); });
+  }
+  function setCaption(html, tone){
+    const c = document.getElementById('caption');
+    c.className = 'caption' + (tone ? ' ' + tone : '');
+    document.getElementById('caption-text').innerHTML = html;
+    say(document.getElementById('caption-text').textContent);
+  }
+  function setProgress(k){ document.getElementById('progress').textContent = k < STEPS.length ? `Step ${k + 1} of ${STEPS.length}` : 'Complete'; }
+  function drawApp(k, opts){ document.getElementById('device').innerHTML = appHTML(k, opts); }
+  const target = id => document.querySelector(`#device [data-id="${id}"]`);
+  function ring(id){ document.querySelectorAll('#device .target-ring').forEach(e => e.classList.remove('target-ring')); const t = target(id); if (t) t.classList.add('target-ring'); }
+
+  // ---------- WATCH ----------
+  let timer = null, playing = false;
+  function stopWatch(){ clearTimeout(timer); timer = null; playing = false; }
+  function watchStep(k){
+    session.k = k;
+    setProgress(k);
+    drawApp(k);
+    const ctl = document.getElementById('controls');
+    if (k >= STEPS.length){
+      setCaption('Done. The group is enrolled, and every learner in it has a December 15 due date.', 'ok');
+      ctl.innerHTML = `<button class="primary" id="w-try">Now try it yourself</button><button class="secondary" id="w-replay">Watch again</button>`;
+      document.getElementById('w-try').onclick = () => start('try');
+      document.getElementById('w-replay').onclick = () => watchStep(0);
+      stopWatch(); return;
+    }
+    const s = STEPS[k];
+    setCaption(s.text);
+    ring(s.id);
+    document.getElementById('app').setAttribute('inert', '');
+    ctl.innerHTML = `<button class="secondary" id="w-back" ${k === 0 ? 'disabled' : ''}>Previous step</button>
+      <button class="primary" id="w-next">Show this step</button>
+      <button class="secondary" id="w-play" aria-pressed="${playing}">${playing ? 'Pause' : 'Play all'}</button>`;
+    document.getElementById('w-back').onclick = () => { stopWatch(); watchStep(k - 1); };
+    document.getElementById('w-next').onclick = () => { stopWatch(); demo(k); };
+    document.getElementById('w-play').onclick = () => { if (playing){ stopWatch(); watchStep(k); } else { playing = true; demo(k); } };
+    if (playing) timer = setTimeout(() => demo(k), 900);
+  }
+  function demo(k){
+    const s = STEPS[k], t = target(s.id), dev = document.getElementById('device');
+    if (!t) return watchStep(k + 1);
+    const finish = () => {
+      if (s.kind === 'select') t.value = s.value;
+      if (s.kind === 'text') t.value = s.value;
+      const done = () => { timer = setTimeout(() => watchStep(k + 1), reduced ? 300 : 700); };
+      if (!reduced){ const r = t.getBoundingClientRect(), d = dev.getBoundingClientRect(); const p = document.createElement('div'); p.className = 'click-pulse'; p.style.left = (r.left - d.left + r.width/2 - 17) + 'px'; p.style.top = (r.top - d.top + r.height/2 - 17) + 'px'; dev.appendChild(p); }
+      done();
+    };
+    if (reduced){ finish(); return; }
+    let cur = dev.querySelector('.cursor');
+    if (!cur){ cur = document.createElementNS('http://www.w3.org/2000/svg','svg'); cur.setAttribute('viewBox','0 0 24 24'); cur.setAttribute('class','cursor'); cur.setAttribute('aria-hidden','true'); cur.innerHTML = '<path d="M3 2l7 19 2.5-7.5L20 11z" fill="#fff" stroke="#1C2B36" stroke-width="1.6" stroke-linejoin="round"/>'; cur.style.left = '40px'; cur.style.top = '60px'; dev.appendChild(cur); }
+    const r = t.getBoundingClientRect(), d = dev.getBoundingClientRect();
+    requestAnimationFrame(() => { cur.style.left = (r.left - d.left + Math.min(r.width/2, 40)) + 'px'; cur.style.top = (r.top - d.top + r.height/2) + 'px'; });
+    timer = setTimeout(() => {
+      if (s.kind === 'text'){ let i = 0; const type = () => { t.value = s.value.slice(0, ++i); if (i < s.value.length) timer = setTimeout(type, 70); else finish(); }; type(); }
+      else finish();
+    }, 800);
+  }
+
+  // ---------- TRY and TEST ----------
+  function interactive(mode, k){
+    session.k = k;
+    setProgress(k);
+    drawApp(k);
+    if (k >= STEPS.length) return mode === 'try' ? tryDone() : testDone();
+    const s = STEPS[k];
+    setCaption(mode === 'try' ? s.text : `<span class="sr-only">Step ${k + 1}. </span>${s.text}`);
+    document.getElementById('controls').innerHTML = mode === 'try' ? `<button class="secondary" id="t-hint">Show me where</button>` : '';
+    if (mode === 'try') document.getElementById('t-hint').onclick = () => { ring(s.id); setCaption(s.hint, 'hint'); target(s.id)?.focus(); };
+    wire(mode, k);
+  }
+  function wire(mode, k){
+    const s = STEPS[k], app = document.getElementById('app');
+    const wrong = (why) => {
+      session.miss[k] = (session.miss[k] || 0) + 1;
+      const n = session.miss[k];
+      app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
+      if (mode === 'try'){
+        setCaption((why ? why + ' ' : 'Not quite. ') + s.hint, 'hint');
+        if (n >= 2) ring(s.id);
+      } else {
+        if (n >= 3){ session.shown[k] = true; setCaption(`That's 3 tries. Here's the answer: ${s.hint} Moving on.`, 'hint'); ring(s.id); setTimeout(() => advance(mode, k), 2600); app.setAttribute('inert',''); }
+        else setCaption(`Not quite. Try again. ${s.text} <span style="color:#7A5A00">(Try ${n + 1} of 3)</span>`, 'hint');
+      }
+    };
+    app.addEventListener('click', e => {
+      const el = e.target.closest('[data-id]');
+      if (!el || e.target.closest('[data-neutral]')) return;
+      const id = el.dataset.id;
+      if (id === s.id){
+        if (s.kind === 'click'){ e.preventDefault(); advance(mode, k); }
+        return; // select/text targets are judged on change
+      }
+      if (id === 'sel-group' || id === 'inp-due' || id === 'search') { if (id !== s.id && (s.kind === 'click' || id === 'search')) wrong(); return; }
+      e.preventDefault(); wrong();
+    });
+    if (s.kind === 'select'){
+      target(s.id).addEventListener('change', e => {
+        if (e.target.value === s.value) advance(mode, k);
+        else { e.target.value = ''; wrong(`That group isn't the new hires.`); }
+      });
+    }
+    if (s.kind === 'text'){
+      const inp = target(s.id);
+      inp.focus();
+      const judge = () => {
+        const v = inp.value.trim().replace(/-/g,'/');
+        if (!v) return;
+        const ok = /^0?12\/15\/2026$/.test(v);
+        if (ok) advance(mode, k); else { wrong(`That date doesn't match.`); inp.value = ''; }
+      };
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); judge(); } });
+      inp.addEventListener('change', judge);
+    }
+  }
+  function advance(mode, k){
+    if (mode === 'try' && !session.miss[k]) {/* first-try success */}
+    interactive(mode, k + 1);
+    if (k + 1 < STEPS.length){
+      const t = target(STEPS[k + 1].id);
+      // Move keyboard users to the new screen without jumping past it
+      if (STEPS[k + 1].kind === 'text') return;
+      if (document.querySelector('#device .dialog') && t) { const first = document.querySelector('#device #sel-group'); (first || t).focus(); }
+      else document.getElementById('app-main').focus();
+      if (mode === 'try') setCaption(`<span class="ok-t">Correct.</span> ${STEPS[k + 1].text}`);
+    }
+  }
+  function tryDone(){
+    setCaption('You did it. The New Hires – November group is enrolled with a December 15 due date.', 'ok');
+    document.getElementById('controls').innerHTML = `<button class="primary" id="d-test">Take the test</button><button class="secondary" id="d-again">Practice again</button>`;
+    document.getElementById('d-test').onclick = () => start('test');
+    document.getElementById('d-again').onclick = () => start('try');
+    document.getElementById('d-test').focus();
+  }
+  function testDone(){
+    const first = STEPS.filter((_, i) => !session.miss[i]).length;
+    const pct = Math.round(first / STEPS.length * 100);
+    const pass = pct >= 80;
+    const rows = STEPS.map((s, i) => {
+      const m = session.miss[i] || 0;
+      const res = session.shown[i] ? '<span class="bad-t">Answer shown</span>' : m === 0 ? '<span class="ok-t">First try</span>' : `<span class="bad-t">${m + 1} tries</span>`;
+      return `<tr><td>${i + 1}</td><td>${s.text}</td><td>${res}</td></tr>`;
+    }).join('');
+    stage.innerHTML = `<div class="card">
+      <h2 tabindex="-1">${pass ? 'You passed' : 'Not yet, but close'}</h2>
+      <p style="margin:0 0 12px;font-size:19px"><b>Score: ${pct}%</b> · ${first} of ${STEPS.length} steps right on the first try. ${pass ? 'You can do this task on your own.' : 'Passing is 80%. Practice the steps marked below, then try again.'}</p>
+      <table class="results"><thead><tr><th scope="col">Step</th><th scope="col">Task</th><th scope="col">Result</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="controls"><button class="primary" id="r-test">Retake test</button><button class="secondary" id="r-try">Practice in Try mode</button><button class="secondary" id="r-home">Back to modes</button></div></div>`;
+    say(`Test complete. Score ${pct} percent. ${pass ? 'Passed.' : 'Not passed.'}`);
+    stage.querySelector('h2').focus();
+    document.getElementById('r-test').onclick = () => start('test');
+    document.getElementById('r-try').onclick = () => start('try');
+    document.getElementById('r-home').onclick = () => { home(); stage.querySelector('h2').focus(); };
+  }
+
+  function start(mode){
+    stopWatch();
+    session = { mode, k: 0, miss: {}, shown: {} };
+    shell(mode);
+    if (mode === 'watch') watchStep(0); else interactive(mode, 0);
+    const c = document.getElementById('caption');
+    c.setAttribute('tabindex','-1'); c.focus();
+  }
+
+  home();
+})();
+</script>
+</body>
+</html>
